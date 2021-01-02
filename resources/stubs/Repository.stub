@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Models\{{modelName}};
+use \Illuminate\Database\QueryException;
+
+class {{repositoryName}}
+{
+	public $status;
+	public $statusCode;
+	public $message;
+	public $queryError;
+
+    public function all()
+    {
+        return {{modelName}}::all();
+    }
+}
