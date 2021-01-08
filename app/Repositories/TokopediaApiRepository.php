@@ -432,13 +432,13 @@ class TokopediaApiRepository
                     array_push($fsOrders, $shopOrder);
                 } 
             }
+
+            // Save New Orders to Customers Database
+            // $this->saveNewCustomersData($fsOrders);
+
+            // Save New Orders to Orders Database
+            $this->saveOrdersData($fsOrders);
         }
-
-        // Save New Orders to Customers Database
-        // $this->saveNewCustomersData($fsOrders);
-
-        // Save New Orders to Orders Database
-        $this->saveOrdersData($fsOrders);
 
     	return $fsOrders;
     }
