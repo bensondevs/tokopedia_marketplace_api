@@ -363,72 +363,74 @@ class TokopediaApiRepository
 
             // Collect shop orders data
             $shopOrders = $response['data'];
-            foreach ($shopOrders as $key => $shopOrder) {
-                // Prepare Marketplace Info
-                $shopOrder['marketplace'] = 'tokopedia';
+            if ($shopOrders) {
+                foreach ($shopOrders as $key => $shopOrder) {
+                    // Prepare Marketplace Info
+                    $shopOrder['marketplace'] = 'tokopedia';
 
-                // Prepare Shop Info
-                $shopOrder['fs_id'] = $shop['fs_id'];
-                $shopOrder['shop_info'] = $shop;
+                    // Prepare Shop Info
+                    $shopOrder['fs_id'] = $shop['fs_id'];
+                    $shopOrder['shop_info'] = $shop;
 
-                // Prepare Logistic Service Type
-                foreach ($shopLogistics as $logistic) {
-                    $shipperName = $logistic['shipper_name'];
-                    $orderShippingAgency = $shopOrder['logistics']['shipping_agency'];
+                    // Prepare Logistic Service Type
+                    foreach ($shopLogistics as $logistic) {
+                        $shipperName = $logistic['shipper_name'];
+                        $orderShippingAgency = $shopOrder['logistics']['shipping_agency'];
 
 
-                    if ($shipperName == $orderShippingAgency) {
-                        $shopOrder['logistic_service_type'] = $logistic['services'][0]['type_name']; 
-                        break;
+                        if ($shipperName == $orderShippingAgency) {
+                            $shopOrder['logistic_service_type'] = $logistic['services'][0]['type_name']; 
+                            break;
+                        }
                     }
-                }
 
-                // Prepare Invoice Detail
-                $invoiceDetail = $this->getInvoiceDetail($shop['fs_id'], $shopOrder['invoice_ref_num']);
+                    // Prepare Invoice Detail
+                    $invoiceDetail = $this->getInvoiceDetail($shop['fs_id'], $shopOrder['invoice_ref_num']);
 
-                // Prepare Invoice Deadline
-                $shipmentFulfillment = $invoiceDetail['shipment_fulfillment'];
-                $deadline = $shipmentFulfillment['confirm_shipping_deadline'];
-                $shopOrder['deadline_time'] = $deadline;
-                $shopOrder['deadline_diff'] = (carbon()->now() < $deadline) ? 
-                    carbon()->now()
-                        ->diff($deadline)
-                        ->format('%D Hari %H Jam %I Menit') : 
-                    'Overdue';
+                    // Prepare Invoice Deadline
+                    $shipmentFulfillment = $invoiceDetail['shipment_fulfillment'];
+                    $deadline = $shipmentFulfillment['confirm_shipping_deadline'];
+                    $shopOrder['deadline_time'] = $deadline;
+                    $shopOrder['deadline_diff'] = (carbon()->now() < $deadline) ? 
+                        carbon()->now()
+                            ->diff($deadline)
+                            ->format('%D Hari %H Jam %I Menit') : 
+                        'Overdue';
 
-                // Decript the secret and content
-                $encryptedData = $shopOrder['encryption'];
-                $encryptedSecret = $encryptedData['secret'];
-                $content = $encryptedData['content'];
-                $shopOrder['decryption'] = (array) json_decode($this->decrypt($encryptedSecret, $content));
+                    // Decript the secret and content
+                    $encryptedData = $shopOrder['encryption'];
+                    $encryptedSecret = $encryptedData['secret'];
+                    $content = $encryptedData['content'];
+                    $shopOrder['decryption'] = (array) json_decode($this->decrypt($encryptedSecret, $content));
 
-                // Order Status Name
-                $orderStatusCode = $shopOrder['order_status'];
+                    // Order Status Name
+                    $orderStatusCode = $shopOrder['order_status'];
 
-                // Order Booking Data
-                $shopOrder['booking_info'] = $this->getInvoiceBooking($shop['fs_id'], $shopOrder['order_id']);
+                    // Order Booking Data
+                    $shopOrder['booking_info'] = $this->getInvoiceBooking($shop['fs_id'], $shopOrder['order_id']);
 
-                // Delivery Status
-                if ($orderStatusCode <= 10)
-                    $shopOrder['order_status_name'] = 'Batal';
-                elseif ($orderStatusCode >= 100 && $orderStatusCode < 200)
-                    $shopOrder['order_status_name'] = 'Belum Bayar';
-                elseif ($orderStatusCode >= 200 && $orderStatusCode < 300)
-                    $shopOrder['order_status_name'] = ($orderStatusCode === 220) ? 
-                        'Lunas' : 'Menunggu Konfirmasi Pembayaran';
-                elseif ($orderStatusCode >= 400 && $orderStatusCode < 500)
-                    $shopOrder['order_status_name'] = 'Siap Dikirim';
-                elseif ($orderStatusCode == 550)
-                    $shopOrder['order_status_name'] = 'Pengembalian';
-                elseif ($orderStatusCode >= 600 && $orderStatusCode < 700)
-                    $shopOrder['order_status_name'] = 'Dikirim';
-                elseif ($orderStatusCode >= 700 && $orderStatusCode < 800)
-                    $shopOrder['order_status_name'] = 'Selesai';
-                else
-                    $shopOrder['order_status_name'] = 'Belum Bayar';
+                    // Delivery Status
+                    if ($orderStatusCode <= 10)
+                        $shopOrder['order_status_name'] = 'Batal';
+                    elseif ($orderStatusCode >= 100 && $orderStatusCode < 200)
+                        $shopOrder['order_status_name'] = 'Belum Bayar';
+                    elseif ($orderStatusCode >= 200 && $orderStatusCode < 300)
+                        $shopOrder['order_status_name'] = ($orderStatusCode === 220) ? 
+                            'Lunas' : 'Menunggu Konfirmasi Pembayaran';
+                    elseif ($orderStatusCode >= 400 && $orderStatusCode < 500)
+                        $shopOrder['order_status_name'] = 'Siap Dikirim';
+                    elseif ($orderStatusCode == 550)
+                        $shopOrder['order_status_name'] = 'Pengembalian';
+                    elseif ($orderStatusCode >= 600 && $orderStatusCode < 700)
+                        $shopOrder['order_status_name'] = 'Dikirim';
+                    elseif ($orderStatusCode >= 700 && $orderStatusCode < 800)
+                        $shopOrder['order_status_name'] = 'Selesai';
+                    else
+                        $shopOrder['order_status_name'] = 'Belum Bayar';
 
-                // Push each order to FS Orders
-                array_push($fsOrders, $shopOrder);
+                    // Push each order to FS Orders
+                    array_push($fsOrders, $shopOrder);
+                } 
             }
         }
 
